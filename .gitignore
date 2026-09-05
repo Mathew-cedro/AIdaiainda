@@ -1,0 +1,24 @@
+# Ignore other project folders not part of this repo
+grade_portal/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Test output files
+test_*.xlsx
+SF9_FRONT_*.xlsx
+SF9_BACK_*.xlsx
+SF9_Complete_*.zip
+SF9_Export.xlsx
+
+# OS generated files
+.DS_Store
+Thumbs.db
