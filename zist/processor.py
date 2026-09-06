@@ -1,6 +1,7 @@
 import os
 import re
 import io
+import copy
 import textwrap
 import zipfile
 import openpyxl
@@ -15,6 +16,23 @@ CENTER_ALIGN = Alignment(horizontal='center', vertical='center')
 LEFT_CENTER_ALIGN = Alignment(horizontal='left', vertical='center')
 NAME_HEADER_FONT = Font(name='Arial', size=11, bold=True, color='000000')
 
+def clone_sheet_images(source_sheet, target_sheet):
+    """
+    Clones all drawings and images from source_sheet to target_sheet in openpyxl.
+    openpyxl.Workbook.copy_worksheet does not clone _images by default.
+    """
+    if not hasattr(source_sheet, '_images') or not source_sheet._images:
+        return
+    for img in source_sheet._images:
+        try:
+            new_img = copy.deepcopy(img)
+            if hasattr(img.ref, 'getvalue'):
+                new_img.ref = io.BytesIO(img.ref.getvalue())
+            target_sheet.add_image(new_img)
+        except Exception:
+            pass
+
+
 # Flexible header normalization map
 HEADER_MAP = {
     # Profile
@@ -28,95 +46,95 @@ HEADER_MAP = {
 
     # Subject Grades
     # Filipino (Row 24)
-    'filipino_t1': ['filipino_t1', 'filipino_q1', 'filipino1', 'fil_t1', 'fil_1'],
-    'filipino_t2': ['filipino_t2', 'filipino_q2', 'filipino2', 'fil_t2', 'fil_2'],
-    'filipino_t3': ['filipino_t3', 'filipino_q3', 'filipino3', 'fil_t3', 'fil_3'],
-    'filipino_final': ['filipino_final', 'filipino_fg', 'fil_final'],
-    'filipino_remarks': ['filipino_remarks', 'fil_remarks'],
+    'filipino_t1': ['filipino_t1', 'filipino_q1', 'filipino1', 'fil_t1', 'fil_1', 'filipino_term1', 'filipino_term_1', 'filipino_1st_term', 'filipino_1st_quarter'],
+    'filipino_t2': ['filipino_t2', 'filipino_q2', 'filipino2', 'fil_t2', 'fil_2', 'filipino_term2', 'filipino_term_2', 'filipino_2nd_term', 'filipino_2nd_quarter'],
+    'filipino_t3': ['filipino_t3', 'filipino_q3', 'filipino3', 'fil_t3', 'fil_3', 'filipino_term3', 'filipino_term_3', 'filipino_3rd_term', 'filipino_3rd_quarter'],
+    'filipino_final': ['filipino_final', 'filipino_fg', 'fil_final', 'fil_fg', 'filipino_final_grade', 'filipino_final_rating', 'filipino_average', 'fil_average', 'filipino_rating', 'filipino_gen_avg', 'filipino_grade'],
+    'filipino_remarks': ['filipino_remarks', 'fil_remarks', 'filipino_action_taken', 'fil_action_taken'],
 
     # English (Row 25)
-    'english_t1': ['english_t1', 'english_q1', 'english1', 'eng_t1', 'eng_1'],
-    'english_t2': ['english_t2', 'english_q2', 'english2', 'eng_t2', 'eng_2'],
-    'english_t3': ['english_t3', 'english_q3', 'english3', 'eng_t3', 'eng_3'],
-    'english_final': ['english_final', 'english_fg', 'eng_final'],
-    'english_remarks': ['english_remarks', 'eng_remarks'],
+    'english_t1': ['english_t1', 'english_q1', 'english1', 'eng_t1', 'eng_1', 'english_term1', 'english_term_1', 'english_1st_term', 'english_1st_quarter'],
+    'english_t2': ['english_t2', 'english_q2', 'english2', 'eng_t2', 'eng_2', 'english_term2', 'english_term_2', 'english_2nd_term', 'english_2nd_quarter'],
+    'english_t3': ['english_t3', 'english_q3', 'english3', 'eng_t3', 'eng_3', 'english_term3', 'english_term_3', 'english_3rd_term', 'english_3rd_quarter'],
+    'english_final': ['english_final', 'english_fg', 'eng_final', 'eng_fg', 'english_final_grade', 'english_final_rating', 'english_average', 'eng_average', 'english_rating', 'english_gen_avg', 'english_grade'],
+    'english_remarks': ['english_remarks', 'eng_remarks', 'english_action_taken', 'eng_action_taken'],
 
     # Mathematics (Row 26)
-    'math_t1': ['math_t1', 'math_q1', 'mathematics_t1', 'math1', 'math_1'],
-    'math_t2': ['math_t2', 'math_q2', 'mathematics_t2', 'math2', 'math_2'],
-    'math_t3': ['math_t3', 'math_q3', 'mathematics_t3', 'math3', 'math_3'],
-    'math_final': ['math_final', 'mathematics_final', 'math_fg'],
-    'math_remarks': ['math_remarks', 'mathematics_remarks'],
+    'math_t1': ['math_t1', 'math_q1', 'mathematics_t1', 'mathematics_q1', 'math1', 'math_1', 'math_term1', 'math_term_1', 'mathematics1', 'mathematics_1', 'mathematics_term1'],
+    'math_t2': ['math_t2', 'math_q2', 'mathematics_t2', 'mathematics_q2', 'math2', 'math_2', 'math_term2', 'math_term_2', 'mathematics2', 'mathematics_2', 'mathematics_term2'],
+    'math_t3': ['math_t3', 'math_q3', 'mathematics_t3', 'mathematics_q3', 'math3', 'math_3', 'math_term3', 'math_term_3', 'mathematics3', 'mathematics_3', 'mathematics_term3'],
+    'math_final': ['math_final', 'mathematics_final', 'math_fg', 'mathematics_fg', 'math_final_grade', 'mathematics_final_grade', 'math_average', 'mathematics_average', 'math_rating', 'mathematics_rating', 'math_gen_avg', 'math_grade'],
+    'math_remarks': ['math_remarks', 'mathematics_remarks', 'math_action_taken', 'mathematics_action_taken'],
 
     # Science (Row 27)
-    'science_t1': ['science_t1', 'science_q1', 'sci_t1', 'science1', 'sci_1'],
-    'science_t2': ['science_t2', 'science_q2', 'sci_t2', 'science2', 'sci_2'],
-    'science_t3': ['science_t3', 'science_q3', 'sci_t3', 'science3', 'sci_3'],
-    'science_final': ['science_final', 'science_fg', 'sci_final'],
-    'science_remarks': ['science_remarks', 'sci_remarks'],
+    'science_t1': ['science_t1', 'science_q1', 'sci_t1', 'sci_q1', 'science1', 'sci_1', 'science_term1', 'science_term_1'],
+    'science_t2': ['science_t2', 'science_q2', 'sci_t2', 'sci_q2', 'science2', 'sci_2', 'science_term2', 'science_term_2'],
+    'science_t3': ['science_t3', 'science_q3', 'sci_t3', 'sci_q3', 'science3', 'sci_3', 'science_term3', 'science_term_3'],
+    'science_final': ['science_final', 'science_fg', 'sci_final', 'sci_fg', 'science_final_grade', 'science_final_rating', 'science_average', 'sci_average', 'science_rating', 'science_gen_avg', 'science_grade'],
+    'science_remarks': ['science_remarks', 'sci_remarks', 'science_action_taken', 'sci_action_taken'],
 
     # AP (Row 28)
-    'ap_t1': ['ap_t1', 'ap_q1', 'araling_panlipunan_t1', 'ap1', 'ap_1'],
-    'ap_t2': ['ap_t2', 'ap_q2', 'araling_panlipunan_t2', 'ap2', 'ap_2'],
-    'ap_t3': ['ap_t3', 'ap_q3', 'araling_panlipunan_t3', 'ap3', 'ap_3'],
-    'ap_final': ['ap_final', 'araling_panlipunan_final', 'ap_fg'],
-    'ap_remarks': ['ap_remarks', 'araling_panlipunan_remarks'],
+    'ap_t1': ['ap_t1', 'ap_q1', 'araling_panlipunan_t1', 'araling_panlipunan_q1', 'ap1', 'ap_1', 'ap_term1', 'ap_term_1', 'aral_pan_t1'],
+    'ap_t2': ['ap_t2', 'ap_q2', 'araling_panlipunan_t2', 'araling_panlipunan_q2', 'ap2', 'ap_2', 'ap_term2', 'ap_term_2', 'aral_pan_t2'],
+    'ap_t3': ['ap_t3', 'ap_q3', 'araling_panlipunan_t3', 'araling_panlipunan_q3', 'ap3', 'ap_3', 'ap_term3', 'ap_term_3', 'aral_pan_t3'],
+    'ap_final': ['ap_final', 'araling_panlipunan_final', 'ap_fg', 'araling_panlipunan_fg', 'ap_final_grade', 'araling_panlipunan_final_grade', 'ap_average', 'araling_panlipunan_average', 'aral_pan_final', 'ap_gen_avg', 'ap_grade'],
+    'ap_remarks': ['ap_remarks', 'araling_panlipunan_remarks', 'ap_action_taken', 'araling_panlipunan_action_taken'],
 
     # Values Education (Row 29)
-    'values_t1': ['values_t1', 'values_education_t1', 'esp_t1', 'esp_1', 'val_t1'],
-    'values_t2': ['values_t2', 'values_education_t2', 'esp_t2', 'esp_2', 'val_t2'],
-    'values_t3': ['values_t3', 'values_education_t3', 'esp_t3', 'esp_3', 'val_t3'],
-    'values_final': ['values_final', 'values_fg', 'esp_final'],
-    'values_remarks': ['values_remarks', 'esp_remarks'],
+    'values_t1': ['values_t1', 'values_education_t1', 'esp_t1', 'esp_1', 'val_t1', 'values_1', 'values_term1', 'values_term_1', 'esp_term1'],
+    'values_t2': ['values_t2', 'values_education_t2', 'esp_t2', 'esp_2', 'val_t2', 'values_2', 'values_term2', 'values_term_2', 'esp_term2'],
+    'values_t3': ['values_t3', 'values_education_t3', 'esp_t3', 'esp_3', 'val_t3', 'values_3', 'values_term3', 'values_term_3', 'esp_term3'],
+    'values_final': ['values_final', 'values_fg', 'esp_final', 'esp_fg', 'values_education_final', 'values_education_fg', 'values_final_grade', 'values_education_final_grade', 'values_average', 'esp_average', 'values_grade', 'esp_grade'],
+    'values_remarks': ['values_remarks', 'esp_remarks', 'values_education_remarks', 'values_action_taken', 'esp_action_taken'],
 
     # TLE / Creative Tech (Row 30)
-    'tle_t1': ['tle_t1', 'tle_q1', 'tle1', 'tle_1', 'creative_tech_t1', 'tech_t1'],
-    'tle_t2': ['tle_t2', 'tle_q2', 'tle2', 'tle_2', 'creative_tech_t2', 'tech_t2'],
-    'tle_t3': ['tle_t3', 'tle_q3', 'tle3', 'tle_3', 'creative_tech_t3', 'tech_t3'],
-    'tle_final': ['tle_final', 'tle_fg'],
-    'tle_remarks': ['tle_remarks'],
+    'tle_t1': ['tle_t1', 'tle_q1', 'tle1', 'tle_1', 'creative_tech_t1', 'creative_tech_1', 'tech_t1', 'tle_term1', 'tle_term_1'],
+    'tle_t2': ['tle_t2', 'tle_q2', 'tle2', 'tle_2', 'creative_tech_t2', 'creative_tech_2', 'tech_t2', 'tle_term2', 'tle_term_2'],
+    'tle_t3': ['tle_t3', 'tle_q3', 'tle3', 'tle_3', 'creative_tech_t3', 'creative_tech_3', 'tech_t3', 'tle_term3', 'tle_term_3'],
+    'tle_final': ['tle_final', 'tle_fg', 'creative_tech_final', 'creative_tech_fg', 'tle_final_grade', 'creative_tech_final_grade', 'tle_average', 'creative_tech_average', 'technology_and_livelihood_education_final', 'tle_grade'],
+    'tle_remarks': ['tle_remarks', 'creative_tech_remarks', 'tle_action_taken'],
 
     # MAPEH (Row 31)
-    'mapeh_t1': ['mapeh_t1', 'mapeh_q1', 'mapeh1'],
-    'mapeh_t2': ['mapeh_t2', 'mapeh_q2', 'mapeh2'],
-    'mapeh_t3': ['mapeh_t3', 'mapeh_q3', 'mapeh3'],
-    'mapeh_final': ['mapeh_final', 'mapeh_fg'],
-    'mapeh_remarks': ['mapeh_remarks'],
+    'mapeh_t1': ['mapeh_t1', 'mapeh_q1', 'mapeh1', 'mapeh_1', 'mapeh_term1', 'mapeh_term_1'],
+    'mapeh_t2': ['mapeh_t2', 'mapeh_q2', 'mapeh2', 'mapeh_2', 'mapeh_term2', 'mapeh_term_2'],
+    'mapeh_t3': ['mapeh_t3', 'mapeh_q3', 'mapeh3', 'mapeh_3', 'mapeh_term3', 'mapeh_term_3'],
+    'mapeh_final': ['mapeh_final', 'mapeh_fg', 'mapeh_final_grade', 'mapeh_average', 'mapeh_rating', 'mapeh_gen_avg', 'mapeh_grade'],
+    'mapeh_remarks': ['mapeh_remarks', 'mapeh_action_taken'],
 
     # Music & Arts (Row 32)
-    'musicarts_t1': ['musicarts_t1', 'music_arts_t1', 'music_t1', 'arts_t1'],
-    'musicarts_t2': ['musicarts_t2', 'music_arts_t2', 'music_t2', 'arts_t2'],
-    'musicarts_t3': ['musicarts_t3', 'music_arts_t3', 'music_t3', 'arts_t3'],
-    'musicarts_final': ['musicarts_final', 'music_arts_final'],
-    'musicarts_remarks': ['musicarts_remarks', 'music_arts_remarks'],
+    'musicarts_t1': ['musicarts_t1', 'music_arts_t1', 'music_t1', 'arts_t1', 'musicarts1', 'music_arts1', 'music_arts_term1'],
+    'musicarts_t2': ['musicarts_t2', 'music_arts_t2', 'music_t2', 'arts_t2', 'musicarts2', 'music_arts2', 'music_arts_term2'],
+    'musicarts_t3': ['musicarts_t3', 'music_arts_t3', 'music_t3', 'arts_t3', 'musicarts3', 'music_arts3', 'music_arts_term3'],
+    'musicarts_final': ['musicarts_final', 'music_arts_final', 'musicarts_fg', 'music_arts_fg', 'music_arts_final_grade', 'music_arts_average', 'music_and_arts_final', 'music_arts_grade'],
+    'musicarts_remarks': ['musicarts_remarks', 'music_arts_remarks', 'music_arts_action_taken'],
 
     # PE & Health (Row 33)
-    'pehealth_t1': ['pehealth_t1', 'pe_health_t1', 'pe_t1', 'health_t1', 'pe_and_health_t1'],
-    'pehealth_t2': ['pehealth_t2', 'pe_health_t2', 'pe_t2', 'health_t2', 'pe_and_health_t2'],
-    'pehealth_t3': ['pehealth_t3', 'pe_health_t3', 'pe_t3', 'health_t3', 'pe_and_health_t3'],
-    'pehealth_final': ['pehealth_final', 'pe_health_final'],
-    'pehealth_remarks': ['pehealth_remarks', 'pe_health_remarks'],
+    'pehealth_t1': ['pehealth_t1', 'pe_health_t1', 'pe_t1', 'health_t1', 'pe_and_health_t1', 'pehealth1', 'pe_health1', 'pe_health_term1'],
+    'pehealth_t2': ['pehealth_t2', 'pe_health_t2', 'pe_t2', 'health_t2', 'pe_and_health_t2', 'pehealth2', 'pe_health2', 'pe_health_term2'],
+    'pehealth_t3': ['pehealth_t3', 'pe_health_t3', 'pe_t3', 'health_t3', 'pe_and_health_t3', 'pehealth3', 'pe_health3', 'pe_health_term3'],
+    'pehealth_final': ['pehealth_final', 'pe_health_final', 'pehealth_fg', 'pe_health_fg', 'pe_health_final_grade', 'pe_health_average', 'pe_and_health_final', 'physical_education_and_health_final', 'pe_health_grade'],
+    'pehealth_remarks': ['pehealth_remarks', 'pe_health_remarks', 'pe_health_action_taken'],
 
     # Research I (Row 34)
-    'research1_t1': ['research1_t1', 'research_1_t1', 'research_t1', 'res1_t1', 'research_i_t1'],
-    'research1_t2': ['research1_t2', 'research_1_t2', 'research_t2', 'res1_t2', 'research_i_t2'],
-    'research1_t3': ['research1_t3', 'research_1_t3', 'research_t3', 'res1_t3', 'research_i_t3'],
-    'research1_final': ['research1_final', 'research_1_final'],
-    'research1_remarks': ['research1_remarks'],
+    'research1_t1': ['research1_t1', 'research_1_t1', 'research_t1', 'res1_t1', 'research_i_t1', 'research1_1', 'research_1_term1'],
+    'research1_t2': ['research1_t2', 'research_1_t2', 'research_t2', 'res1_t2', 'research_i_t2', 'research1_2', 'research_1_term2'],
+    'research1_t3': ['research1_t3', 'research_1_t3', 'research_t3', 'res1_t3', 'research_i_t3', 'research1_3', 'research_1_term3'],
+    'research1_final': ['research1_final', 'research_1_final', 'research1_fg', 'research_1_fg', 'research_i_final', 'research_1_final_grade', 'research_final_grade', 'research_1_average', 'research_grade'],
+    'research1_remarks': ['research1_remarks', 'research_1_remarks', 'research_action_taken'],
 
     # Math of Investigation (Row 35)
-    'mathinv_t1': ['mathinv_t1', 'math_inv_t1', 'moi_t1', 'math_of_investigation_t1'],
-    'mathinv_t2': ['mathinv_t2', 'math_inv_t2', 'moi_t2', 'math_of_investigation_t2'],
-    'mathinv_t3': ['mathinv_t3', 'math_inv_t3', 'moi_t3', 'math_of_investigation_t3'],
-    'mathinv_final': ['mathinv_final', 'math_inv_final', 'moi_final'],
-    'mathinv_remarks': ['mathinv_remarks'],
+    'mathinv_t1': ['mathinv_t1', 'math_inv_t1', 'moi_t1', 'math_of_investigation_t1', 'mathinv1', 'mathematical_investigation_t1', 'mathematical_investigation_and_modelling_t1'],
+    'mathinv_t2': ['mathinv_t2', 'math_inv_t2', 'moi_t2', 'math_of_investigation_t2', 'mathinv2', 'mathematical_investigation_t2', 'mathematical_investigation_and_modelling_t2'],
+    'mathinv_t3': ['mathinv_t3', 'math_inv_t3', 'moi_t3', 'math_of_investigation_t3', 'mathinv3', 'mathematical_investigation_t3', 'mathematical_investigation_and_modelling_t3'],
+    'mathinv_final': ['mathinv_final', 'math_inv_final', 'moi_final', 'mathinv_fg', 'math_inv_fg', 'mathematical_investigation_final', 'mathematical_investigation_and_modelling_final', 'math_of_investigation_final', 'moi_grade'],
+    'mathinv_remarks': ['mathinv_remarks', 'math_inv_remarks', 'moi_remarks', 'mathematical_investigation_action_taken'],
 
     # General Average (Row 37)
-    'genavg_t1': ['genavg_t1', 'general_average_t1', 'gen_avg_t1'],
-    'genavg_t2': ['genavg_t2', 'general_average_t2', 'gen_avg_t2'],
-    'genavg_t3': ['genavg_t3', 'general_average_t3', 'gen_avg_t3'],
-    'genavg_final': ['genavg_final', 'general_average_final', 'gen_avg_final'],
-    'genavg_remarks': ['genavg_remarks', 'general_average_remarks'],
+    'genavg_t1': ['genavg_t1', 'general_average_t1', 'gen_avg_t1', 'genavg_1', 'gen_avg_1', 'gen_average_t1', 'average_t1', 'average_1', 'general_average_1', 'gwa_t1', 'gwa_1', 'general_average_term_1', 'gen_avg_term_1', 'general_average_quarter_1', 'gen_average_1', 'general_average_q1'],
+    'genavg_t2': ['genavg_t2', 'general_average_t2', 'gen_avg_t2', 'genavg_2', 'gen_avg_2', 'gen_average_t2', 'average_t2', 'average_2', 'general_average_2', 'gwa_t2', 'gwa_2', 'general_average_term_2', 'gen_avg_term_2', 'general_average_quarter_2', 'gen_average_2', 'general_average_q2'],
+    'genavg_t3': ['genavg_t3', 'general_average_t3', 'gen_avg_t3', 'genavg_3', 'gen_avg_3', 'gen_average_t3', 'average_t3', 'average_3', 'general_average_3', 'gwa_t3', 'gwa_3', 'general_average_term_3', 'gen_avg_term_3', 'general_average_quarter_3', 'gen_average_3', 'general_average_q3'],
+    'genavg_final': ['genavg_final', 'general_average_final', 'gen_avg_final', 'general_average', 'gen_average', 'genavg', 'gen_avg', 'final_general_average', 'final_gen_avg', 'final_average', 'overall_average', 'average', 'gwa', 'final_gwa', 'general_average_fg', 'genavg_fg', 'gen_avg_fg', 'general_average_rating', 'final_rating_average', 'computed_general_average', 'general_average_grade'],
+    'genavg_remarks': ['genavg_remarks', 'general_average_remarks', 'gen_avg_remarks', 'general_average_action_taken', 'gen_avg_action_taken', 'overall_remarks', 'action_taken'],
 
     # Attendance - Class Days (Left: C..M / Total N; Right: R..AB / Total AC)
     'days_jun': ['days_jun', 'class_days_jun', 'jun_days'],
@@ -605,6 +623,7 @@ def generate_sf9_front_workbook(
         s2 = students[i+1] if i+1 < len(students) else None
 
         ws = wb.copy_worksheet(base_sheet)
+        clone_sheet_images(base_sheet, ws)
         tab_title = format_2up_tab_name(
             idx1=i+1,
             name1=s1.get('name', f"Student_{i+1}"),
@@ -653,6 +672,7 @@ def generate_sf9_back_workbook(
         s2 = students[i+1] if i+1 < len(students) else None
 
         ws = wb.copy_worksheet(base_sheet)
+        clone_sheet_images(base_sheet, ws)
         ws.row_dimensions[1].hidden = False
         ws.row_dimensions[1].height = 20.0
         tab_title = format_2up_tab_name(

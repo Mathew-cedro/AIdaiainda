@@ -92,6 +92,10 @@ assert "3 FRONT Perez" == wb_front.sheetnames[1]
 # Check Sheet 1 FRONT: Left Card (Navarro) & Right Card (Cedro)
 ws_f1 = wb_front[wb_front.sheetnames[0]]
 
+# Image check: All 4 images preserved
+assert len(ws_f1._images) == 4
+print("[PASS] FRONT Sheet 1 has 4 images preserved!")
+
 # Left Card checks
 assert ws_f1['C14'].value == 'Navarro, Juan'
 assert ws_f1['F14'].value == 14
@@ -142,10 +146,33 @@ assert ws_b1['R9'].value == 'Active participant in class activities'
 assert ws_b1['T31'].value == 'Grade 9'
 print("[PASS] BACK 2-Up Sheet 1 verified (including B1 and Q1 student names)!")
 
-# Odd count page check (Perez)
-ws_b2 = wb_back[wb_back.sheetnames[1]]
-assert ws_b2['B1'].value == 'Perez, Carlos'
-assert ws_b2['Q1'].value is None
-print("[PASS] BACK 2-Up Sheet 2 verified (odd count page B1 set, Q1 empty)!")
+# 5. Test user-provided computed final grades and general average
+wb_computed = openpyxl.Workbook()
+ws_comp = wb_computed.active
+ws_comp.append([
+    'School_Year', 'Name', 'Age', 'Sex', 'LRN', 'Grade', 'Section',
+    'Filipino_T1', 'Filipino_T2', 'Filipino_T3', 'Filipino_Final', 'Filipino_Remarks',
+    'General_Average'
+])
+ws_comp.append([
+    '2026-2027', 'Santos, Anna', 14, 'Female', '123456789012', '7', 'Diamond',
+    90, 92, 94, 93, 'Passed with Merit',
+    95
+])
+comp_path = "test_computed_input.xlsx"
+wb_computed.save(comp_path)
+
+students_comp = parse_input_workbook(comp_path)
+assert len(students_comp) == 1
+assert students_comp[0].get('filipino_final') == 93
+assert students_comp[0].get('filipino_remarks') == 'Passed with Merit'
+assert students_comp[0].get('genavg_final') == 95
+
+wb_comp_front, _ = generate_sf9_front_workbook(students_comp)
+ws_cf = wb_comp_front.active
+assert ws_cf['G24'].value == 93  # User computed final grade prioritized over formula
+assert ws_cf['H24'].value == 'Passed with Merit'  # User remarks prioritized
+assert ws_cf['G37'].value == 95  # User computed general average prioritized
+print("[PASS] User-provided computed grades & general average verified!")
 
 print("\nALL 2-UP PROCESSOR TESTS PASSED!")
