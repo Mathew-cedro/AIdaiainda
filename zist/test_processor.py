@@ -94,17 +94,21 @@ ws_f1 = wb_front[wb_front.sheetnames[0]]
 
 # Left Card checks
 assert ws_f1['C14'].value == 'Navarro, Juan'
+assert ws_f1['F14'].value == 14
 assert ws_f1['D24'].value == 88
 assert ws_f1['D24'].alignment.horizontal == 'center'
 assert ws_f1['D24'].alignment.vertical == 'center'
 assert ws_f1['D31'].value == 89 # MAPEH
+assert ws_f1['G37'].value is not None # General Average Final
 
 # Right Card checks
 assert ws_f1['L14'].value == 'Cedro, Maria'
+assert ws_f1['O14'].value == 14
 assert ws_f1['M24'].value == 92
 assert ws_f1['M24'].alignment.horizontal == 'center'
 assert ws_f1['M24'].alignment.vertical == 'center'
 assert ws_f1['M31'].value == 92 # MAPEH
+assert ws_f1['P37'].value is not None # General Average Final
 print("[PASS] FRONT 2-Up Sheet 1 verified!")
 
 # 4. Test BACK Workbook
@@ -127,7 +131,7 @@ assert ws_b1['C10'].value is not None
 print("Navarro Term 1 Remark C9:", repr(ws_b1['C9'].value))
 print("Navarro Term 1 Remark C10:", repr(ws_b1['C10'].value))
 assert len(ws_b1['C9'].value) <= 56
-assert ws_b1['D32'].value == 'Grade 9'
+assert ws_b1['E31'].value == 'Grade 9'
 
 # Right Card checks (Cedro)
 assert ws_b1['Q1'].value == 'Cedro, Maria'
@@ -135,7 +139,7 @@ assert ws_b1['R4'].value == 20
 assert ws_b1['R4'].alignment.horizontal == 'center'
 assert ws_b1['AC4'].value == "=SUM(R4:AB4)"
 assert ws_b1['R9'].value == 'Active participant in class activities'
-assert ws_b1['S32'].value == 'Grade 9'
+assert ws_b1['T31'].value == 'Grade 9'
 print("[PASS] BACK 2-Up Sheet 1 verified (including B1 and Q1 student names)!")
 
 # Odd count page check (Perez)

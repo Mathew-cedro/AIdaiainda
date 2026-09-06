@@ -7,8 +7,8 @@ import openpyxl
 from openpyxl.styles import Alignment, Font
 from typing import List, Dict, Any, Tuple, Optional
 
-FRONT_TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "final automated sf9 26-27 FRONT.xlsx")
-BACK_TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "final automated sf9 26-27 BACK.xlsx")
+FRONT_TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "SF9 FINAL FORMAT-FRONT.xlsx")
+BACK_TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "SF9 FINAL FORMAT-BACK.xlsx")
 
 # Alignment and Font helpers
 CENTER_ALIGN = Alignment(horizontal='center', vertical='center')
@@ -355,7 +355,7 @@ def populate_front_card(ws, student: Dict[str, Any], side: str, global_overrides
     # 1. Profile coordinates
     sy_cell = 'D12' if is_left else 'M12'
     name_cell = 'C14' if is_left else 'L14'
-    age_cell = 'E14' if is_left else 'N14'
+    age_cell = 'F14' if is_left else 'O14'
     sex_cell = 'H14' if is_left else 'Q14'
     lrn_cell = 'C15' if is_left else 'L15'
     grade_cell = 'E15' if is_left else 'N15'
@@ -538,14 +538,14 @@ def populate_back_card(ws, student: Dict[str, Any], side: str, global_overrides:
     if len(rem3_lines) > 1: ws[f'{comm_col}16'] = rem3_lines[1]; ws[f'{comm_col}16'].alignment = LEFT_CENTER_ALIGN
 
     # 3. Certificate of Transfer & Eligibility
-    # Left: Admitted to D32, Eligible M32, Approved C34, Adviser J34, Admitted In C41, Date K41
-    # Right: Admitted to S32, Eligible AB32, Approved R34, Adviser Y34, Admitted In R41, Date Z41
-    admit_cell = 'D32' if is_left else 'S32'
-    eligible_cell = 'M32' if is_left else 'AB32'
-    head_cell = 'C34' if is_left else 'R34'
-    adviser_cell = 'J34' if is_left else 'Y34'
-    admitted_in_cell = 'C41' if is_left else 'R41'
-    date_cell = 'K41' if is_left else 'Z41'
+    # Left: Admitted to E31 (merged E31:F31), Eligible M31, Approved C33 (merged C33:F33), Adviser J33 (merged J33:M33), Admitted In C40 (merged C40:I40), Date L40 (merged L40:N40)
+    # Right: Admitted to T31 (merged T31:U31), Eligible AB31, Approved R33 (merged R33:U33), Adviser Y33 (merged Y33:AB33), Admitted In R40 (merged R40:X40), Date AA40 (merged AA40:AC40)
+    admit_cell = 'E31' if is_left else 'T31'
+    eligible_cell = 'M31' if is_left else 'AB31'
+    head_cell = 'C33' if is_left else 'R33'
+    adviser_cell = 'J33' if is_left else 'Y33'
+    admitted_in_cell = 'C40' if is_left else 'R40'
+    date_cell = 'L40' if is_left else 'AA40'
 
     admit_grade = global_overrides.get('admitted_to_grade') or student.get('admitted_to_grade')
     if admit_grade is not None:

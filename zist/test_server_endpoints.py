@@ -126,14 +126,14 @@ def test_preview_and_conversions():
     assert ws_b["C4"].alignment.horizontal == 'center'
     assert ws_b["N4"].value == "=SUM(C4:M4)"
     assert ws_b["C9"].value == "Excellent work in class activities"
-    assert ws_b["J34"].value == "Mrs. Reyes"
+    assert ws_b["J33"].value == "Mrs. Reyes"
     # Right Card
     assert ws_b["Q1"].value == "Cedro, Maria"
     assert ws_b["R4"].value == 20
     assert ws_b["R4"].alignment.horizontal == 'center'
     assert ws_b["AC4"].value == "=SUM(R4:AB4)"
     assert ws_b["R9"].value == "Top Performer in all subjects"
-    assert ws_b["Y34"].value == "Mrs. Reyes"
+    assert ws_b["Y33"].value == "Mrs. Reyes"
     print("[PASS] /api/convert/back passed with 2-Up sheet, B1/Q1 student names, and overrides")
 
     # 4. Convert ZIP
