@@ -712,12 +712,12 @@ def generate_sf9_back_workbook(
         )
         ws.title = tab_title
 
-        # Populate Left Card
-        populate_back_card(ws, s1, side='left', global_overrides=global_overrides)
-
-        # Populate Right Card (if s2 exists)
+        # For 2-Up Duplex / Back-to-Back printing alignment:
+        # Front page has Student 1 on Left, Student 2 on Right.
+        # Back page has Student 2 on Left, Student 1 on Right.
         if s2:
-            populate_back_card(ws, s2, side='right', global_overrides=global_overrides)
+            populate_back_card(ws, s2, side='left', global_overrides=global_overrides)
+        populate_back_card(ws, s1, side='right', global_overrides=global_overrides)
 
     wb.remove(base_sheet)
     return wb, back_name

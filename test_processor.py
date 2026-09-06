@@ -124,27 +124,33 @@ assert "3 BACK Perez" == wb_back.sheetnames[1]
 
 ws_b1 = wb_back[wb_back.sheetnames[0]]
 
-# Left Card checks (Navarro)
-assert ws_b1['B1'].value == 'Navarro, Juan'
+# Left Card checks (Student 2: Cedro on Left for back-to-back printing)
+assert ws_b1['B1'].value == 'Cedro, Maria'
 assert ws_b1['C4'].value == 20
 assert ws_b1['C4'].alignment.horizontal == 'center'
 assert ws_b1['N4'].value == "=SUM(C4:M4)"
-# Check remarks wrapping in C9, C10
-assert ws_b1['C9'].value is not None
-assert ws_b1['C10'].value is not None
-print("Navarro Term 1 Remark C9:", repr(ws_b1['C9'].value))
-print("Navarro Term 1 Remark C10:", repr(ws_b1['C10'].value))
-assert len(ws_b1['C9'].value) <= 56
+assert ws_b1['C9'].value == 'Active participant in class activities'
 assert ws_b1['E31'].value == 'Grade 9'
 
-# Right Card checks (Cedro)
-assert ws_b1['Q1'].value == 'Cedro, Maria'
+# Right Card checks (Student 1: Navarro on Right for back-to-back printing)
+assert ws_b1['Q1'].value == 'Navarro, Juan'
 assert ws_b1['R4'].value == 20
 assert ws_b1['R4'].alignment.horizontal == 'center'
 assert ws_b1['AC4'].value == "=SUM(R4:AB4)"
-assert ws_b1['R9'].value == 'Active participant in class activities'
+# Check remarks wrapping in R9, R10
+assert ws_b1['R9'].value is not None
+assert ws_b1['R10'].value is not None
+print("Navarro Term 1 Remark R9:", repr(ws_b1['R9'].value))
+print("Navarro Term 1 Remark R10:", repr(ws_b1['R10'].value))
+assert len(ws_b1['R9'].value) <= 56
 assert ws_b1['T31'].value == 'Grade 9'
-print("[PASS] BACK 2-Up Sheet 1 verified (including B1 and Q1 student names)!")
+print("[PASS] BACK 2-Up Sheet 1 verified (Duplex alignment: Student 2 Left, Student 1 Right)!")
+
+# Odd count page check (Perez alone on Sheet 2 -> Right side on BACK page)
+ws_b2 = wb_back[wb_back.sheetnames[1]]
+assert ws_b2['B1'].value is None
+assert ws_b2['Q1'].value == 'Perez, Carlos'
+print("[PASS] BACK 2-Up Sheet 2 verified (odd count page B1 empty, Q1 set for duplex)!")
 
 # 5. Test user-provided computed final grades and general average
 wb_computed = openpyxl.Workbook()
