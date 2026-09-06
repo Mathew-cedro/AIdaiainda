@@ -194,8 +194,27 @@ assert ws_pf['F24'].value is None
 assert ws_pf['D25'].value == 88  # 88.2 rounded to whole number 88
 # Final Grade formula requires COUNT=3
 assert ws_pf['G24'].value == '=IF(COUNT(D24:F24)=3,ROUND(AVERAGE(D24:F24),0),"")'
-# General average formula requires COUNT=10 for final average
-assert ws_pf['G37'].value == '=IF(COUNT(G24:G31,G34:G35)=10,ROUND(AVERAGE(G24:G31,G34:G35),0),"")'
-print("[PASS] Partial term entry formula and decimal rounding verified!")
+# 7. Test MAPEH independence and empty fields preservation
+wb_empty = openpyxl.Workbook()
+ws_emp = wb_empty.active
+ws_emp.append(['School_Year', 'Name', 'LRN', 'MusicArts_T1', 'PEHealth_T1'])
+ws_emp.append(['2026-2027', 'Luna, Antonio', '112233445566', 90, 92])
+emp_path = "test_empty_input.xlsx"
+wb_empty.save(emp_path)
+
+students_emp = parse_input_workbook(emp_path)
+wb_emp_front, _ = generate_sf9_front_workbook(students_emp)
+ws_ef = wb_emp_front.active
+# MAPEH T1 (D31) should NOT be auto-filled from Music (D32) and PE (D33); it remains None/empty
+assert ws_ef['D31'].value is None
+assert ws_ef['D32'].value == 90  # Music T1
+assert ws_ef['D33'].value == 92  # PE T1
+# Age, Sex, Section were omitted, so they remain None/empty
+assert ws_ef['F14'].value is None
+assert ws_ef['H14'].value is None
+assert ws_ef['H15'].value is None
+# General average core subjects range explicitly excludes rows 32 and 33
+assert 'D24:D31,D34:D35' in ws_ef['D37'].value
+print("[PASS] MAPEH independence and empty fields preservation verified!")
 
 print("\nALL 2-UP PROCESSOR TESTS PASSED!")

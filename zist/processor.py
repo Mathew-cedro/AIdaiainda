@@ -446,21 +446,11 @@ def populate_front_card(ws, student: Dict[str, Any], side: str, global_overrides
             ws[f'{t3_col}{row}'] = t3
             ws[f'{t3_col}{row}'].alignment = CENTER_ALIGN
 
-        # Final Grade: Only computed once all 3 terms are filled out
+        # Final Grade: Only computed once all 3 terms for that subject are filled out
         if fg is not None:
             ws[f'{fg_col}{row}'] = fg
         else:
-            if subj == 'mapeh':
-                # MAPEH row 31 averages Music (32) and PE (33)
-                if t1 is None:
-                    ws[f'{t1_col}{row}'] = f'=IF(COUNT({t1_col}32:{t1_col}33)=2,ROUND(AVERAGE({t1_col}32:{t1_col}33),0),"")'
-                if t2 is None:
-                    ws[f'{t2_col}{row}'] = f'=IF(COUNT({t2_col}32:{t2_col}33)=2,ROUND(AVERAGE({t2_col}32:{t2_col}33),0),"")'
-                if t3 is None:
-                    ws[f'{t3_col}{row}'] = f'=IF(COUNT({t3_col}32:{t3_col}33)=2,ROUND(AVERAGE({t3_col}32:{t3_col}33),0),"")'
-                ws[f'{fg_col}{row}'] = f'=IF(COUNT({t1_col}{row}:{t3_col}{row})=3,ROUND(AVERAGE({t1_col}{row}:{t3_col}{row}),0),"")'
-            else:
-                ws[f'{fg_col}{row}'] = f'=IF(COUNT({t1_col}{row}:{t3_col}{row})=3,ROUND(AVERAGE({t1_col}{row}:{t3_col}{row}),0),"")'
+            ws[f'{fg_col}{row}'] = f'=IF(COUNT({t1_col}{row}:{t3_col}{row})=3,ROUND(AVERAGE({t1_col}{row}:{t3_col}{row}),0),"")'
 
         ws[f'{fg_col}{row}'].alignment = CENTER_ALIGN
 
@@ -472,6 +462,7 @@ def populate_front_card(ws, student: Dict[str, Any], side: str, global_overrides
         ws[f'{rem_col}{row}'].alignment = CENTER_ALIGN
 
     # 3. General Average (Row 37)
+    # Excludes rows 32 (Music & Arts) and 33 (PE & Health) - only Row 31 (MAPEH) is counted
     core_t1 = f"{t1_col}24:{t1_col}31,{t1_col}34:{t1_col}35"
     core_t2 = f"{t2_col}24:{t2_col}31,{t2_col}34:{t2_col}35"
     core_t3 = f"{t3_col}24:{t3_col}31,{t3_col}34:{t3_col}35"
@@ -509,7 +500,7 @@ def populate_back_card(ws, student: Dict[str, Any], side: str, global_overrides:
     # 0. Student Name Header in B1 (Left) or Q1 (Right)
     name_cell = 'B1' if is_left else 'Q1'
     student_name = student.get('name')
-    if student_name:
+    if student_name and str(student_name).strip() != "":
         ws[name_cell] = str(student_name).strip()
         ws[name_cell].alignment = LEFT_CENTER_ALIGN
         ws[name_cell].font = NAME_HEADER_FONT
@@ -521,31 +512,40 @@ def populate_back_card(ws, student: Dict[str, Any], side: str, global_overrides:
     total_col = 'N' if is_left else 'AC'
 
     # Class Days (Row 4)
+    has_days = False
     for mon, col_letter in months_map:
         val = student.get(f'days_{mon}')
-        if val is not None:
+        if val is not None and str(val).strip() != "":
             ws[f'{col_letter}4'] = safe_num(val)
             ws[f'{col_letter}4'].alignment = CENTER_ALIGN
-    ws[f'{total_col}4'] = f"=SUM({start_col}4:{end_col}4)"
-    ws[f'{total_col}4'].alignment = CENTER_ALIGN
+            has_days = True
+    if has_days:
+        ws[f'{total_col}4'] = f"=SUM({start_col}4:{end_col}4)"
+        ws[f'{total_col}4'].alignment = CENTER_ALIGN
 
     # Days Present (Row 5)
+    has_present = False
     for mon, col_letter in months_map:
         val = student.get(f'present_{mon}')
-        if val is not None:
+        if val is not None and str(val).strip() != "":
             ws[f'{col_letter}5'] = safe_num(val)
             ws[f'{col_letter}5'].alignment = CENTER_ALIGN
-    ws[f'{total_col}5'] = f"=SUM({start_col}5:{end_col}5)"
-    ws[f'{total_col}5'].alignment = CENTER_ALIGN
+            has_present = True
+    if has_present:
+        ws[f'{total_col}5'] = f"=SUM({start_col}5:{end_col}5)"
+        ws[f'{total_col}5'].alignment = CENTER_ALIGN
 
     # Days Absent (Row 6)
+    has_absent = False
     for mon, col_letter in months_map:
         val = student.get(f'absent_{mon}')
-        if val is not None:
+        if val is not None and str(val).strip() != "":
             ws[f'{col_letter}6'] = safe_num(val)
             ws[f'{col_letter}6'].alignment = CENTER_ALIGN
-    ws[f'{total_col}6'] = f"=SUM({start_col}6:{end_col}6)"
-    ws[f'{total_col}6'].alignment = CENTER_ALIGN
+            has_absent = True
+    if has_absent:
+        ws[f'{total_col}6'] = f"=SUM({start_col}6:{end_col}6)"
+        ws[f'{total_col}6'].alignment = CENTER_ALIGN
 
     # 2. Teacher Remarks (Capped at 56 characters per line)
     # Term 1: Left rows 9, 10, 11 (C) | Right rows 9, 10, 11 (R)
