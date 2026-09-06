@@ -8,8 +8,24 @@ import openpyxl
 from openpyxl.styles import Alignment, Font
 from typing import List, Dict, Any, Tuple, Optional
 
-FRONT_TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "SF9 FINAL FORMAT-FRONT.xlsx")
-BACK_TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "SF9 FINAL FORMAT-BACK.xlsx")
+def find_template(filename: str) -> str:
+    """Find template file across various serverless and local directory structures."""
+    candidates = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), filename),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "api", filename),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), filename),
+        os.path.join(os.getcwd(), filename),
+        os.path.join(os.getcwd(), "api", filename),
+        os.path.join("/var/task", filename),
+        os.path.join("/var/task/api", filename),
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return os.path.abspath(c)
+    return os.path.abspath(candidates[0])
+
+FRONT_TEMPLATE_PATH = find_template("SF9 FINAL FORMAT-FRONT.xlsx")
+BACK_TEMPLATE_PATH = find_template("SF9 FINAL FORMAT-BACK.xlsx")
 
 # Alignment and Font helpers
 CENTER_ALIGN = Alignment(horizontal='center', vertical='center')

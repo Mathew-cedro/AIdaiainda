@@ -1,8 +1,21 @@
 {
+  "version": 2,
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "*.xlsx"
+    }
+  },
   "builds": [
     {
       "src": "api/index.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": [
+          "*.xlsx",
+          "api/*.xlsx",
+          "static/**"
+        ]
+      }
     }
   ],
   "routes": [

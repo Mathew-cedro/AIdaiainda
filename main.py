@@ -31,8 +31,23 @@ app.add_middleware(
     expose_headers=["Content-Disposition", "X-Suggested-Filename", "X-Student-Count"]
 )
 
-STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-INPUT_TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "SF9_Data_Input_Template.xlsx")
+def find_file_or_dir(name: str) -> str:
+    candidates = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), name),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "api", name),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), name),
+        os.path.join(os.getcwd(), name),
+        os.path.join(os.getcwd(), "api", name),
+        os.path.join("/var/task", name),
+        os.path.join("/var/task/api", name),
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return os.path.abspath(c)
+    return os.path.abspath(candidates[0])
+
+STATIC_DIR = find_file_or_dir("static")
+INPUT_TEMPLATE_PATH = find_file_or_dir("SF9_Data_Input_Template.xlsx")
 
 os.makedirs(STATIC_DIR, exist_ok=True)
 
