@@ -306,6 +306,16 @@ def safe_num(val):
     except (ValueError, TypeError):
         return val
 
+def safe_round_whole(val):
+    """Safely converts to a rounded whole integer (no decimals) or returns original value"""
+    if val is None or val == "":
+        return None
+    try:
+        f = float(val)
+        return int(round(f))
+    except (ValueError, TypeError):
+        return val
+
 def wrap_remarks_text(text: Any, width: int = 56, max_lines: int = 3) -> List[str]:
     """Wraps text at specified width (56 characters) across up to max_lines"""
     if not text:
@@ -418,10 +428,10 @@ def populate_front_card(ws, student: Dict[str, Any], side: str, global_overrides
     rem_col = 'H' if is_left else 'Q'
 
     for subj, row in SUBJECT_ROWS_FRONT.items():
-        t1 = safe_num(student.get(f'{subj}_t1'))
-        t2 = safe_num(student.get(f'{subj}_t2'))
-        t3 = safe_num(student.get(f'{subj}_t3'))
-        fg = safe_num(student.get(f'{subj}_final'))
+        t1 = safe_round_whole(student.get(f'{subj}_t1'))
+        t2 = safe_round_whole(student.get(f'{subj}_t2'))
+        t3 = safe_round_whole(student.get(f'{subj}_t3'))
+        fg = safe_round_whole(student.get(f'{subj}_final'))
         rem = student.get(f'{subj}_remarks')
 
         if t1 is not None:
@@ -436,21 +446,21 @@ def populate_front_card(ws, student: Dict[str, Any], side: str, global_overrides
             ws[f'{t3_col}{row}'] = t3
             ws[f'{t3_col}{row}'].alignment = CENTER_ALIGN
 
-        # Final Grade
+        # Final Grade: Only computed once all 3 terms are filled out
         if fg is not None:
             ws[f'{fg_col}{row}'] = fg
         else:
             if subj == 'mapeh':
                 # MAPEH row 31 averages Music (32) and PE (33)
                 if t1 is None:
-                    ws[f'{t1_col}{row}'] = f'=IF(COUNT({t1_col}32:{t1_col}33)>0,ROUND(AVERAGE({t1_col}32:{t1_col}33),0),"")'
+                    ws[f'{t1_col}{row}'] = f'=IF(COUNT({t1_col}32:{t1_col}33)=2,ROUND(AVERAGE({t1_col}32:{t1_col}33),0),"")'
                 if t2 is None:
-                    ws[f'{t2_col}{row}'] = f'=IF(COUNT({t2_col}32:{t2_col}33)>0,ROUND(AVERAGE({t2_col}32:{t2_col}33),0),"")'
+                    ws[f'{t2_col}{row}'] = f'=IF(COUNT({t2_col}32:{t2_col}33)=2,ROUND(AVERAGE({t2_col}32:{t2_col}33),0),"")'
                 if t3 is None:
-                    ws[f'{t3_col}{row}'] = f'=IF(COUNT({t3_col}32:{t3_col}33)>0,ROUND(AVERAGE({t3_col}32:{t3_col}33),0),"")'
-                ws[f'{fg_col}{row}'] = f'=IF(COUNT({t1_col}{row}:{t3_col}{row})>0,ROUND(AVERAGE({t1_col}{row}:{t3_col}{row}),0),"")'
+                    ws[f'{t3_col}{row}'] = f'=IF(COUNT({t3_col}32:{t3_col}33)=2,ROUND(AVERAGE({t3_col}32:{t3_col}33),0),"")'
+                ws[f'{fg_col}{row}'] = f'=IF(COUNT({t1_col}{row}:{t3_col}{row})=3,ROUND(AVERAGE({t1_col}{row}:{t3_col}{row}),0),"")'
             else:
-                ws[f'{fg_col}{row}'] = f'=IF(COUNT({t1_col}{row}:{t3_col}{row})>0,ROUND(AVERAGE({t1_col}{row}:{t3_col}{row}),0),"")'
+                ws[f'{fg_col}{row}'] = f'=IF(COUNT({t1_col}{row}:{t3_col}{row})=3,ROUND(AVERAGE({t1_col}{row}:{t3_col}{row}),0),"")'
 
         ws[f'{fg_col}{row}'].alignment = CENTER_ALIGN
 
@@ -467,10 +477,10 @@ def populate_front_card(ws, student: Dict[str, Any], side: str, global_overrides
     core_t3 = f"{t3_col}24:{t3_col}31,{t3_col}34:{t3_col}35"
     core_fg = f"{fg_col}24:{fg_col}31,{fg_col}34:{fg_col}35"
 
-    t1_avg = safe_num(student.get('genavg_t1'))
-    t2_avg = safe_num(student.get('genavg_t2'))
-    t3_avg = safe_num(student.get('genavg_t3'))
-    fg_avg = safe_num(student.get('genavg_final'))
+    t1_avg = safe_round_whole(student.get('genavg_t1'))
+    t2_avg = safe_round_whole(student.get('genavg_t2'))
+    t3_avg = safe_round_whole(student.get('genavg_t3'))
+    fg_avg = safe_round_whole(student.get('genavg_final'))
     rem_avg = student.get('genavg_remarks')
 
     ws[f'{t1_col}37'] = t1_avg if t1_avg is not None else f'=IF(COUNT({core_t1})>0,ROUND(AVERAGE({core_t1}),0),"")'
@@ -482,7 +492,8 @@ def populate_front_card(ws, student: Dict[str, Any], side: str, global_overrides
     ws[f'{t3_col}37'] = t3_avg if t3_avg is not None else f'=IF(COUNT({core_t3})>0,ROUND(AVERAGE({core_t3}),0),"")'
     ws[f'{t3_col}37'].alignment = CENTER_ALIGN
 
-    ws[f'{fg_col}37'] = fg_avg if fg_avg is not None else f'=IF(COUNT({core_fg})>0,ROUND(AVERAGE({core_fg}),0),"")'
+    # Final General Average is reflected when all core subjects have their final grades (or user provided)
+    ws[f'{fg_col}37'] = fg_avg if fg_avg is not None else f'=IF(COUNT({core_fg})=10,ROUND(AVERAGE({core_fg}),0),"")'
     ws[f'{fg_col}37'].alignment = CENTER_ALIGN
 
     ws[f'{rem_col}37'] = str(rem_avg) if rem_avg is not None else f'=IF(ISNUMBER({fg_col}37),IF({fg_col}37>=75,"Passed","Failed"),"")'

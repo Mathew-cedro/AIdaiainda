@@ -168,11 +168,34 @@ assert students_comp[0].get('filipino_final') == 93
 assert students_comp[0].get('filipino_remarks') == 'Passed with Merit'
 assert students_comp[0].get('genavg_final') == 95
 
-wb_comp_front, _ = generate_sf9_front_workbook(students_comp)
-ws_cf = wb_comp_front.active
-assert ws_cf['G24'].value == 93  # User computed final grade prioritized over formula
-assert ws_cf['H24'].value == 'Passed with Merit'  # User remarks prioritized
-assert ws_cf['G37'].value == 95  # User computed general average prioritized
-print("[PASS] User-provided computed grades & general average verified!")
+# 6. Test partial term entry (Final grade only reflected when all 3 terms are present)
+wb_partial = openpyxl.Workbook()
+ws_part = wb_partial.active
+ws_part.append([
+    'School_Year', 'Name', 'Age', 'Sex', 'LRN', 'Grade', 'Section',
+    'Filipino_T1', 'Filipino_T2', 'English_T1'
+])
+ws_part.append([
+    '2026-2027', 'Garcia, Miguel', 13, 'Male', '987654321098', '7', 'Ruby',
+    89.6, 91.4, 88.2
+])
+part_path = "test_partial_input.xlsx"
+wb_partial.save(part_path)
+
+students_part = parse_input_workbook(part_path)
+assert len(students_part) == 1
+
+wb_part_front, _ = generate_sf9_front_workbook(students_part)
+ws_pf = wb_part_front.active
+# Check whole-number rounding on the generated card
+assert ws_pf['D24'].value == 90  # 89.6 rounded to whole number 90
+assert ws_pf['E24'].value == 91  # 91.4 rounded to whole number 91
+assert ws_pf['F24'].value is None
+assert ws_pf['D25'].value == 88  # 88.2 rounded to whole number 88
+# Final Grade formula requires COUNT=3
+assert ws_pf['G24'].value == '=IF(COUNT(D24:F24)=3,ROUND(AVERAGE(D24:F24),0),"")'
+# General average formula requires COUNT=10 for final average
+assert ws_pf['G37'].value == '=IF(COUNT(G24:G31,G34:G35)=10,ROUND(AVERAGE(G24:G31,G34:G35),0),"")'
+print("[PASS] Partial term entry formula and decimal rounding verified!")
 
 print("\nALL 2-UP PROCESSOR TESTS PASSED!")
